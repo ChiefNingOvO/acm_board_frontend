@@ -13,8 +13,6 @@ interface Props {
 }
 
 export const GlobalMessage: React.FC<Props> = ({ message }) => {
-  console.log("GlobalMessage 组件渲染，消息:", message);
-  
   return (
     <AnimatePresence>
       {message && (

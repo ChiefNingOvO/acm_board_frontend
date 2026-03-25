@@ -1,7 +1,7 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Submission } from "./useEngine";
-import { CheckCircle2, XCircle, Loader2, Snowflake } from "lucide-react";
+import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
 
 interface Props {
   submissions: Submission[];
@@ -11,12 +11,14 @@ export const EventStream: React.FC<Props> = ({ submissions }) => {
   return (
     <div className="flex-1 h-full overflow-hidden p-8 pb-24 relative z-10 flex flex-col justify-end">
       {/* Container for cards, aligning them to the bottom to float up */}
-      <div className="w-full max-w-5xl mx-auto relative z-10 flex flex-col gap-3 justify-end h-full">
-        <AnimatePresence mode="popLayout">
-          {submissions.map((sub) => (
-            <SubmissionCard key={sub.id} sub={sub} />
-          ))}
-        </AnimatePresence>
+      <div className="w-full max-w-5xl mx-auto relative z-10 h-full">
+        <div className="relative flex h-full flex-col justify-end gap-3">
+          <AnimatePresence mode="popLayout">
+            {submissions.map((sub) => (
+              <SubmissionCard key={sub.id} sub={sub} />
+            ))}
+          </AnimatePresence>
+        </div>
       </div>
     </div>
   );
@@ -26,7 +28,6 @@ const SubmissionCard = React.forwardRef<HTMLDivElement, { sub: Submission }>(({ 
   const isPending = sub.status === "Pending";
   const isAC = sub.status === "AC";
   const isWA = sub.status === "WA";
-  const isFreeze = sub.status === "Freeze";
 
   return (
     <motion.div
@@ -41,14 +42,12 @@ const SubmissionCard = React.forwardRef<HTMLDivElement, { sub: Submission }>(({ 
         damping: 50,
         opacity: { duration: 0.1 },
       }}
-      className={`relative overflow-hidden rounded-xl border px-6 py-4 flex items-center justify-between w-full transition-colors duration-500 ${
+      className={`relative h-[92px] overflow-hidden rounded-xl border px-6 py-4 flex items-center justify-between w-full transition-colors duration-500 ${
         isAC
           ? "border-ac/50 bg-ac/10 shadow-[0_0_15px_rgba(0,200,83,0.15)]"
           : isWA
             ? "border-wa/30 bg-wa/5"
-            : isFreeze
-              ? "border-freeze/50 bg-freeze/10"
-              : "border-white/10 bg-white/5"
+            : "border-white/10 bg-white/5"
       }`}
     >
       {/* 渐变背景光晕 */}
@@ -58,41 +57,34 @@ const SubmissionCard = React.forwardRef<HTMLDivElement, { sub: Submission }>(({ 
       {isWA && (
         <div className="absolute inset-0 bg-gradient-to-r from-wa/10 to-transparent pointer-events-none" />
       )}
-      {isFreeze && (
-        <div className="absolute inset-0 bg-gradient-to-r from-freeze/10 to-transparent pointer-events-none" />
-      )}
 
-      <div className="flex items-center gap-6 z-10">
+      <div className="flex min-w-0 items-center gap-6 z-10">
         <div
           className={`shrink-0 text-3xl font-black font-mono w-12 text-center ${
             isAC
               ? "text-ac drop-shadow-[0_0_6px_rgba(0,200,83,0.8)]"
               : isWA
                 ? "text-wa drop-shadow-[0_0_6px_rgba(255,82,82,0.8)]"
-            : isFreeze
-              ? "text-freeze drop-shadow-[0_0_6px_rgba(68,168,238,0.8)]"
               : "text-white/80"
         }`}
         >
           {sub.problem}
         </div>
 
-        <div className="flex flex-col">
+        <div className="flex min-w-0 flex-col justify-center">
           <span
-            className="text-xl font-bold text-primaryText tracking-wide truncate"
+            className="text-xl font-bold text-primaryText tracking-wide truncate leading-tight"
             title={sub.team}
           >
             {sub.team}
           </span>
-          {sub.judge_time && (
-            <span className="text-sm font-mono text-white/40 mt-1">
-              {sub.judge_time}
-            </span>
-          )}
+          <span className={`mt-1 h-5 text-sm font-mono text-white/40 ${sub.judge_time ? "" : "opacity-0"}`}>
+            {sub.judge_time || "00:00:00"}
+          </span>
         </div>
       </div>
 
-      <div className="flex items-center z-10">
+      <div className="flex min-w-[120px] justify-end items-center z-10">
         <AnimatePresence mode="wait">
           {isPending && (
             <motion.div
@@ -105,20 +97,6 @@ const SubmissionCard = React.forwardRef<HTMLDivElement, { sub: Submission }>(({ 
               <Loader2 className="w-5 h-5 animate-spin" />
               <span className="font-bold tracking-widest text-sm">
                 评测中...
-              </span>
-            </motion.div>
-          )}
-          {isFreeze && (
-            <motion.div
-              key="freeze"
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              className="flex items-center gap-2 text-freeze bg-freeze/10 px-4 py-2 rounded-full border border-freeze/30"
-            >
-              <Snowflake className="w-5 h-5" />
-              <span className="font-bold tracking-widest text-sm">
-                冻结
               </span>
             </motion.div>
           )}

@@ -10,7 +10,13 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+*.tsbuildinfo
 *.local
+.env.production
+.env.development.local
+.env.production.local
+.env.test.local
+nginx.acm-board.conf
 
 # Editor directories and files
 .vscode/*

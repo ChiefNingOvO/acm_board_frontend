@@ -1,79 +1,67 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Trophy, Play } from "lucide-react";
+import { appConfig } from "./config";
 
 interface RankItem {
   rank: number;
   name: string;
 }
 
-interface RankListPanelProps {
-  isFrozen: boolean;
-  isMatchStarted: boolean;
-}
-
-export const RankListPanel: React.FC<RankListPanelProps> = ({ isFrozen, isMatchStarted }) => {
+export const RankListPanel: React.FC = () => {
   const [allRanks, setAllRanks] = useState<RankItem[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
-  const [isStarted, setIsStarted] = useState(false);
-  const itemsPerPage = 10;
+  const [isStarted, setIsStarted] = useState(appConfig.rankAutoStart);
+  const itemsPerPage = appConfig.rankPageSize;
 
-  const fetchRanks = async () => {
+  const fetchRanks = useCallback(async () => {
     try {
-      const res = await fetch("/api/get_rank_list");
-      if (!res.ok) return;
-      const data = await res.json();
-      
+      const response = await fetch(appConfig.rankListPath);
+      if (!response.ok) return;
+
+      const data = await response.json();
       if (Array.isArray(data)) {
         setAllRanks(data);
-        setCurrentPage(0); // 数据更新时重置页码
+        setCurrentPage(0);
       }
-    } catch (e) {
-      console.error("Fetch rank list error:", e);
+    } catch (error) {
+      console.error("Fetch rank list error:", error);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    if (!isStarted || !isMatchStarted) return;
-    // 初始获取一次
-    if (!isFrozen) fetchRanks();
-  }, [isStarted, isFrozen, isMatchStarted]);
+    if (!isStarted) return;
+    fetchRanks();
+  }, [fetchRanks, isStarted]);
 
   useEffect(() => {
-    if (!isStarted || !isMatchStarted || allRanks.length === 0) return;
+    if (!isStarted || allRanks.length === 0) return;
 
     const totalPages = Math.ceil(allRanks.length / itemsPerPage);
-    
-    // 如果只有1页，我们也要定期重新请求数据，因为不需要翻页
     if (totalPages <= 1) {
-      const timer = setTimeout(() => {
-        if (!isFrozen) fetchRanks();
-      }, 5000);
-      return () => clearTimeout(timer);
+      const timer = window.setTimeout(() => {
+        fetchRanks();
+      }, appConfig.rankRotateMs);
+      return () => window.clearTimeout(timer);
     }
 
-    // 翻页逻辑
-    const timer = setInterval(() => {
+    const timer = window.setInterval(() => {
       setCurrentPage((prev) => {
         const nextPage = prev + 1;
-        // 如果展示完了最后一页
         if (nextPage >= totalPages) {
-          // 封榜后不再请求，而是回到第一页
-          if (isFrozen) return 0;
-          // 触发重新获取数据，同时重置页码（在 fetchRanks 里会重置）
           fetchRanks();
-          return prev; // 保持当前页，等数据回来后自动切回 0
+          return prev;
         }
         return nextPage;
       });
-    }, 5000); // 每 5 秒翻页一次
+    }, appConfig.rankRotateMs);
 
-    return () => clearInterval(timer);
-  }, [allRanks.length]); // 依赖 length，这样当新数据到来时重新启动定时器
+    return () => window.clearInterval(timer);
+  }, [allRanks.length, fetchRanks, isStarted, itemsPerPage]);
 
   const currentDisplayRanks = allRanks.slice(
     currentPage * itemsPerPage,
-    (currentPage + 1) * itemsPerPage
+    (currentPage + 1) * itemsPerPage,
   );
 
   return (
@@ -84,6 +72,7 @@ export const RankListPanel: React.FC<RankListPanelProps> = ({ isFrozen, isMatchS
           TOP 100 RANKS
         </h2>
       </div>
+
       <div className="flex-1 overflow-hidden p-2 flex flex-col justify-start gap-1.5 relative">
         <AnimatePresence mode="popLayout">
           {!isStarted ? (
@@ -98,7 +87,9 @@ export const RankListPanel: React.FC<RankListPanelProps> = ({ isFrozen, isMatchS
                 <Trophy className="w-8 h-8 text-ac/60" />
               </div>
               <p className="text-secondaryText text-sm mb-6 leading-relaxed">
-                实时榜单已就绪<br/>点击下方按钮开始同步数据
+                实时榜单已就绪
+                <br />
+                点击下方按钮开始同步数据
               </p>
               <button
                 onClick={() => setIsStarted(true)}
@@ -120,18 +111,26 @@ export const RankListPanel: React.FC<RankListPanelProps> = ({ isFrozen, isMatchS
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ type: "spring", stiffness: 300, damping: 25 }}
                 className={`flex items-center gap-3 p-2 rounded-lg border shadow-sm flex-1 shrink-0 ${
-                  item.rank === 1 ? 'bg-gradient-to-r from-yellow-500/30 to-transparent border-yellow-500/50' :
-                  item.rank === 2 ? 'bg-gradient-to-r from-gray-300/30 to-transparent border-gray-300/50' :
-                  item.rank === 3 ? 'bg-gradient-to-r from-amber-700/30 to-transparent border-amber-700/50' :
-                  'bg-black/40 border-white/10'
+                  item.rank === 1
+                    ? "bg-gradient-to-r from-yellow-500/30 to-transparent border-yellow-500/50"
+                    : item.rank === 2
+                      ? "bg-gradient-to-r from-gray-300/30 to-transparent border-gray-300/50"
+                      : item.rank === 3
+                        ? "bg-gradient-to-r from-amber-700/30 to-transparent border-amber-700/50"
+                        : "bg-black/40 border-white/10"
                 }`}
               >
-                <div className={`w-8 text-center font-black font-mono ${
-                  item.rank === 1 ? 'text-yellow-500 drop-shadow-[0_0_5px_rgba(234,179,8,0.8)]' :
-                  item.rank === 2 ? 'text-gray-300 drop-shadow-[0_0_5px_rgba(209,213,219,0.8)]' :
-                  item.rank === 3 ? 'text-amber-700 drop-shadow-[0_0_5px_rgba(180,83,9,0.8)]' :
-                  'text-white/40'
-                }`}>
+                <div
+                  className={`w-8 text-center font-black font-mono ${
+                    item.rank === 1
+                      ? "text-yellow-500 drop-shadow-[0_0_5px_rgba(234,179,8,0.8)]"
+                      : item.rank === 2
+                        ? "text-gray-300 drop-shadow-[0_0_5px_rgba(209,213,219,0.8)]"
+                        : item.rank === 3
+                          ? "text-amber-700 drop-shadow-[0_0_5px_rgba(180,83,9,0.8)]"
+                          : "text-white/40"
+                  }`}
+                >
                   #{item.rank}
                 </div>
                 <div className="flex-1 font-bold text-sm truncate text-primaryText" title={item.name}>

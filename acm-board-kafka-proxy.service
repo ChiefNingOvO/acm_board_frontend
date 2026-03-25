@@ -1,0 +1,15 @@
+[Unit]
+Description=ACM Board Kafka WebSocket Proxy
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/opt/acm-board/frontend
+EnvironmentFile=/opt/acm-board/frontend/.env.production
+ExecStart=/usr/bin/node /opt/acm-board/frontend/kafka-websocket-proxy.mjs
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

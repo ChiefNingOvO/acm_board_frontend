@@ -1,0 +1,43 @@
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_EVENT_TITLE: ${VITE_EVENT_TITLE:-华北水利水电大学第八届 ACM-ICPC 程序设计大赛}
+        VITE_EVENT_START_AT: ${VITE_EVENT_START_AT:-}
+        VITE_EVENT_START_COUNTDOWN_TITLE: ${VITE_EVENT_START_COUNTDOWN_TITLE:-Contest Starts In}
+        VITE_EVENT_START_COUNTDOWN_SUBTITLE: ${VITE_EVENT_START_COUNTDOWN_SUBTITLE:-The board will open automatically at the configured time}
+        VITE_API_BASE_PATH: ${VITE_API_BASE_PATH:-/api}
+        VITE_RANK_LIST_PATH: ${VITE_RANK_LIST_PATH:-/api/get_rank_list}
+        VITE_FIRST_BLOOD_PATH: ${VITE_FIRST_BLOOD_PATH:-/api/get_first_blood}
+        VITE_KAFKA_WS_URL: ${VITE_KAFKA_WS_URL:-/ws}
+        VITE_COUNTDOWN_TRIGGER_AT: ${VITE_COUNTDOWN_TRIGGER_AT:-}
+        VITE_COUNTDOWN_DURATION_MINUTES: ${VITE_COUNTDOWN_DURATION_MINUTES:-60}
+        VITE_COUNTDOWN_TITLE: ${VITE_COUNTDOWN_TITLE:-Countdown}
+        VITE_COUNTDOWN_SUBTITLE: ${VITE_COUNTDOWN_SUBTITLE:-First Blood And Judging Stream Paused}
+        VITE_RANK_PAGE_SIZE: ${VITE_RANK_PAGE_SIZE:-10}
+        VITE_RANK_ROTATE_MS: ${VITE_RANK_ROTATE_MS:-5000}
+        VITE_RANK_AUTO_START: ${VITE_RANK_AUTO_START:-true}
+    env_file:
+      - .env.production
+    environment:
+      SERVER_NAME: ${SERVER_NAME:-_}
+      STATIC_ROOT: /usr/share/nginx/html
+      API_PROXY_TARGET: ${API_PROXY_TARGET:-http://host.docker.internal:8090}
+      WS_PROXY_TARGET: ${WS_PROXY_TARGET:-http://kafka-proxy:8080}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - kafka-proxy
+    ports:
+      - "${FRONTEND_PORT:-80}:80"
+
+  kafka-proxy:
+    build:
+      context: .
+      dockerfile: Dockerfile.proxy
+    env_file:
+      - .env.production
+    environment:
+      NODE_ENV: production
