@@ -1,7 +1,7 @@
 import React from "react";
 
 const SPECIAL_THANKS = [
-  "RainnbowDash",
+  "RainbowDash",
   "ColdCloud",
   "RainFly",
   "Tttshaoqi",
