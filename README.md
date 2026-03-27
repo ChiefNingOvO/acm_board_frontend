@@ -63,12 +63,6 @@
   </tr>
 </table>
 
-建议把真实截图按下面这组文件名放进仓库，替换后无需再修改 README：
-
-- `README-scene-live.svg`
-- `README-scene-freeze.svg`
-- `README-scene-broadcast.svg`
-- `README-scene-prestart.svg`
 
 ## 功能特性
 
